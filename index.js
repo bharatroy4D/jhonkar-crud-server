@@ -60,7 +60,7 @@ async function run() {
             res.send(result);
         });
 
-        // ✅ UPDATE a user by ID
+        // ✅ UPDATE a user by ID (Includes Image)
         app.put('/users/:id', async (req, res) => {
             const id = req.params.id;
             const updatedUser = req.body;
@@ -72,7 +72,8 @@ async function run() {
                 $set: {
                     name: updatedUser.name,
                     email: updatedUser.email,
-                    age: updatedUser.age,
+                    image: updatedUser.image, // ✅ Support for image field
+                    age: updatedUser.age      // Optional, only if you're sending age
                 },
             };
 
@@ -80,21 +81,23 @@ async function run() {
             res.send(result);
         });
 
-        // Test MongoDB connection
+        // Ping to confirm MongoDB connection
         await client.db("admin").command({ ping: 1 });
         console.log("✅ Connected to MongoDB!");
     } finally {
+        // Optional: Close the client when needed
         // await client.close();
     }
 }
+
 run().catch(console.dir);
 
 // Root route
 app.get('/', (req, res) => {
-    res.send('I create CRUD operation');
+    res.send('🛠️ CRUD server is running');
 });
 
-// Server listen
+// Start server
 app.listen(port, () => {
     console.log(`🚀 Server is running on port: ${port}`);
 });
