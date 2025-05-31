@@ -4,12 +4,14 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// middleware
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+// MongoDB Connection URI
 const uri = "mongodb+srv://bharatroy1005:8tHK40WDuLV58iRH@cluster0.rluwc.mongodb.net/?appName=Cluster0";
+
+// MongoDB Client Config
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -18,57 +20,81 @@ const client = new MongoClient(uri, {
     }
 });
 
+// Main async function
 async function run() {
     try {
+        // Connect MongoDB client
         await client.connect();
-        const userCollection = client.db('userBD').collection('users')
 
-        // fixed get route
+        // Create collection instance
+        const userCollection = client.db('userBD').collection('users');
+
+        // ✅ READ all users
         app.get('/users', async (req, res) => {
             const cursor = userCollection.find();
             const result = await cursor.toArray();
             res.send(result);
-        }),
+        });
 
-            app.get('/users/:id', async (req, res) => {
-                const id = req.params.id;
-                const query = { _id: new ObjectId(id) };
-                const user = await userCollection.findOne(query);
-                res.send(user)
-            })
+        // ✅ READ a single user by ID
+        app.get('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const user = await userCollection.findOne(query);
+            res.send(user);
+        });
 
-        // ✅ Fixed POST route
+        // ✅ CREATE a new user
         app.post('/users', async (req, res) => {
             const user = req.body;
-            console.log('users list', user);
+            console.log('New User:', user);
             const result = await userCollection.insertOne(user);
-            console.log(result);
             res.send(result);
         });
 
+        // ✅ DELETE a user by ID
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
-            console.log('please delete from database', id);
             const query = { _id: new ObjectId(id) };
             const result = await userCollection.deleteOne(query);
-            res.send(result)
+            res.send(result);
         });
 
+        // ✅ UPDATE a user by ID
+        app.put('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedUser = req.body;
+
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+
+            const updateDoc = {
+                $set: {
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    age: updatedUser.age,
+                },
+            };
+
+            const result = await userCollection.updateOne(filter, updateDoc, options);
+            res.send(result);
+        });
+
+        // Test MongoDB connection
         await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        console.log("✅ Connected to MongoDB!");
     } finally {
-        // You can keep client open for now (commented out close)
         // await client.close();
     }
 }
-run().catch(console.log);
+run().catch(console.dir);
 
 // Root route
 app.get('/', (req, res) => {
-    res.send('I create crud operation');
+    res.send('I create CRUD operation');
 });
 
 // Server listen
 app.listen(port, () => {
-    console.log(`CRUD operation is running on port: ${port}`);
+    console.log(`🚀 Server is running on port: ${port}`);
 });
